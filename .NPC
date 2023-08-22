@@ -1,0 +1,50 @@
+local npc = script.Parent  -- Assuming this script is a child of the NPC model
+
+-- Parameters
+local detectionRange = 10  -- Adjust this value based on the range at which the NPC detects the player
+local chaseSpeed = 20      -- Adjust this value based on the speed at which the NPC chases the player
+
+-- Reference to the Pathfinding service
+local pathfindingService = game:GetService("PathfindingService")
+
+-- Function to handle the NPC's hostile behavior
+local function engagePlayer(playerCharacter)
+    local targetPosition = playerCharacter.Position
+
+    local path = pathfindingService:CreatePath({
+        AgentRadius = 2,
+        AgentHeight = 5,
+        AgentCanJump = true,
+        AgentJumpHeight = 10,
+        AgentMaxSlope = 45,
+        })
+    
+    path:ComputeAsync(npc.Position, targetPosition)
+
+    local humanoid = npc:FindFirstChild("Humanoid")
+    if humanoid then
+        humanoid:MoveTo(path:GetPointCoordinates())
+        humanoid.WalkSpeed = chaseSpeed
+    end
+end
+
+-- Function to detect the player's presence
+local function detectPlayer()
+    local player = game.Players:GetPlayerFromCharacter(npc.Parent)
+    if player then
+        local playerCharacter = player.Character
+        if playerCharacter then
+            local playerPosition = playerCharacter.PrimaryPart.Position
+            local distance = (playerPosition - npc.Position).Magnitude
+            if distance <= detectionRange then
+                engagePlayer(playerCharacter.PrimaryPart)
+            end
+        end
+    end
+end
+
+-- Detect player presence periodically
+while true do
+    detectPlayer()
+    wait(1)  -- Adjust the wait time based on how frequently you want the NPC to check for the player
+end
